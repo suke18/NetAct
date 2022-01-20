@@ -1,4 +1,4 @@
-<center> <h4> NetAct: TF-gene regulation network construction </h4> </center>
+<center> <h2> NetAct: TF-gene regulation network construction </h2> </center>
 
 
 
