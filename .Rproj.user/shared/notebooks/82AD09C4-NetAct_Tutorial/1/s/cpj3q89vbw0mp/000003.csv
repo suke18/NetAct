@@ -1,7 +1,0 @@
-"0","boxplot(edata)
-edata = as.data.frame(edata)
-library(""hgu133plus2.db"")
-"
-"2","Error in library(""hgu133plus2.db"") : 
-  there is no package called ‘hgu133plus2.db’
-"

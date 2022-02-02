@@ -1,5 +1,0 @@
-"0","rm(list = ls())
-library(""GEOquery"")
-"
-"2","Error in library(""GEOquery"") : there is no package called ‘GEOquery’
-"
