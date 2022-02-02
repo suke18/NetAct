@@ -1,0 +1,50 @@
+"0","Combine_heatmap
+"
+"1","function (new_activity, eset) 
+"
+"1","{
+"
+"1","    require(ComplexHeatmap)
+"
+"1","    require(circlize)
+"
+"1","    if (is(eset, ""ExpressionSet"")) {
+"
+"1","        data = exprs(eset)
+"
+"1","    }
+"
+"1","    else {
+"
+"1","        data = eset
+"
+"1","    }
+"
+"1","    H1 = Heatmap(row_norm(new_activity), col = colorRamp2(c(-2, 
+"
+"1","        0, 2), c(""green3"", ""white"", ""red"")), cluster_columns = F, 
+"
+"1","        cluster_rows = T, show_row_dend = FALSE, name = ""Activity"", 
+"
+"1","        column_title = ""Activity"")
+"
+"1","    gs = rownames(new_activity)
+"
+"1","    gc = colnames(new_activity)
+"
+"1","    H2 = Heatmap(row_norm(data[gs, gc]), col = colorRamp2(c(-2, 
+"
+"1","        0, 2), c(""green3"", ""white"", ""red"")), cluster_columns = F, 
+"
+"1","        cluster_rows = T, show_row_dend = FALSE, name = ""Expression"", 
+"
+"1","        column_title = ""Expression"")
+"
+"1","    H1 + H2
+"
+"1","}
+"
+"1","<bytecode: 0x7ff22ed1c4e0>
+"
+"1","<environment: namespace:NetAct>
+"
