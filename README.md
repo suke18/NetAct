@@ -18,4 +18,4 @@ library(FEAST)
 ```
 
 ### 2. Quick Start and Tutorial
-For the step-by-step instructions, please refer to this [tutorial](https://github.com/suke18/NetAct/tutrial/tutorial.md):
+For the step-by-step instructions, please refer to this [tutorial](https://github.com/suke18/NetAct/doc/NetAct_Tutorial.html):
