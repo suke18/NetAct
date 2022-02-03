@@ -12,7 +12,7 @@ BugReports: https://github.com/suke18/NetAct/issues
 Imports: DESeq2, ComplexHeatmap, stats, Rcpp, visNetwork
 Suggests: rmarkdown, BiocStyle
 VignetteBuilder: knitr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Packaged: 2021-09-07 07:02:20 UTC; kenongsu
 Maintainer: Kenong Su <suke@upenn.edu>
 NeedsCompilation: yes

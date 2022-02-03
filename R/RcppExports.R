@@ -9,3 +9,11 @@ apply_cumsum_col <- function(m) {
     .Call('_NetAct_apply_cumsum_col', PACKAGE = 'NetAct', m)
 }
 
+GSEA_test <- function(GSDB, stats_vector, nperm) {
+    .Call('_NetAct_GSEA_test', PACKAGE = 'NetAct', GSDB, stats_vector, nperm)
+}
+
+cppGSEA <- function(GSDB, stats_vector) {
+    .Call('_NetAct_cppGSEA', PACKAGE = 'NetAct', GSDB, stats_vector)
+}
+
