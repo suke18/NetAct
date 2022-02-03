@@ -14,7 +14,7 @@ Inferring transcript factor activity is the key to construct transcriptional reg
 ```
 library(devtools)
 install_github("suke18/NetAct", dependencies=T, build_vignettes = T)
-library(FEAST)
+library(NetAct)
 ```
 
 ### 2. Quick Start and Tutorial
