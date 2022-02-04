@@ -18,23 +18,23 @@ allNet = function(GSDB){
 #' @return numeric matrix (0-1) Matrix containing mutual information values
 #' 
 calculateMI <- function(actMat = actMat, nbins=16){
-    nGenes <- dim(actMat)[1]
-    miMat <- matrix(0,nrow = nGenes,ncol = nGenes)
-    geneNames <- rownames(actMat)
-    rownames(miMat) <- geneNames
-    colnames(miMat) <- geneNames
-    
-    #i=1
-    for(i in 1:(nGenes-1))
+  nGenes <- dim(actMat)[1]
+  miMat <- matrix(0,nrow = nGenes,ncol = nGenes)
+  geneNames <- rownames(actMat)
+  rownames(miMat) <- geneNames
+  colnames(miMat) <- geneNames
+  
+  #i=1
+  for(i in 1:(nGenes-1))
+  {
+    for(j in (i+1):(nGenes))
     {
-        for(j in (i+1):(nGenes))
-        {
-            temp <- entropy::discretize2d(actMat[i,],actMat[j,],nbins,nbins)
-            miMat[i, j] <- entropy::mi.shrink(temp,verbose = F)
-            miMat[j, i] <- miMat[i, j]
-        }
+      temp <- entropy::discretize2d(actMat[i,],actMat[j,],nbins,nbins)
+      miMat[i, j] <- entropy::mi.shrink(temp,verbose = F)
+      miMat[j, i] <- miMat[i, j]
     }
-    return(miMat)
+  }
+  return(miMat)
 }
 
 
@@ -72,16 +72,16 @@ TF_Filter = function(actMat, GSDB, miTh = 0.4, maxTf = 75,
                      maxInteractions = 300,  
                      nbins = 16, corMethod = "spearman", useCor = FALSE, 
                      removeSignalling = FALSE, DPI = FALSE, ...){
-    
-    corMat = cor(t(actMat), method = corMethod)
-    if(useCor){
-        miMat <- abs(corMat)
-        diag(miMat) <- 0
-    }
-    else{
-        miMat <- calculateMI(actMat, nbins)
-    }
-    
+
+  corMat = cor(t(actMat), method = corMethod)
+  if(useCor){
+    miMat <- abs(corMat)
+    diag(miMat) <- 0
+  }
+  else{
+    miMat <- calculateMI(actMat, nbins)
+  }
+
     actLinks = reshape2::melt(miMat)
     actLinks <- actLinks[order(actLinks$value,decreasing = TRUE),]
     actLinks <- actLinks[actLinks$value > miTh,]
@@ -95,18 +95,18 @@ TF_Filter = function(actMat, GSDB, miTh = 0.4, maxTf = 75,
     counter <- 1
     while((link <= maxInteractions) && (tf <= maxTf) && 
           counter <= dim(actLinks)[1]){
-        if(actLinks[counter,2] %in% GSDB[[which(DBtf == actLinks[counter,1])]]){
-            link=link+1
-            tfLinks[link, 1] <- as.character(actLinks[counter,1])
-            tfLinks[link, 2] <- as.character(actLinks[counter,2])
-            tf = length(union(tfLinks$Source,tfLinks$Target))
-            
+      if(actLinks[counter,2] %in% GSDB[[which(DBtf == actLinks[counter,1])]]){
+        link=link+1
+        tfLinks[link, 1] <- as.character(actLinks[counter,1])
+        tfLinks[link, 2] <- as.character(actLinks[counter,2])
+        tf = length(union(tfLinks$Source,tfLinks$Target))
+    
         }
-        counter=counter+1
-        
+      counter=counter+1
+      
     }
     if(removeSignalling) {
-        tfLinks <- tfLinks[tfLinks[,1] %in% tfLinks[,2],]
+      tfLinks <- tfLinks[tfLinks[,1] %in% tfLinks[,2],]
     }
     tfLinks <- tfLinks[complete.cases(tfLinks),]
     corLinks = reshape2::melt(corMat)
@@ -116,16 +116,16 @@ TF_Filter = function(actMat, GSDB, miTh = 0.4, maxTf = 75,
     # determine the directions
     for (i in 1:nrow(tfLinks)){
         tfLinks$Interaction[i] <- ifelse(corMat[tfLinks[i,1], 
-                                                tfLinks[i,2]] > 0, 1, 2)
+                                                 tfLinks[i,2]] > 0, 1, 2)
     }
     rownames(tfLinks) = NULL
     
     if(DPI){
-        tfLinks <- applyDPI(tfLinks, miMat,...)
+      tfLinks <- applyDPI(tfLinks, miMat,...)
     }
     
     return(tfLinks)
-    
+
 }
 
 #' @export
@@ -143,66 +143,66 @@ TF_Filter = function(actMat, GSDB, miTh = 0.4, maxTf = 75,
 #' @return data.frame containing the filtered interactions.
 #'   
 applyDPI <- function(tfLinks = tfLinks, miMat = miMat, miDiff = 0, minMiTh = 0.5){
-    print(miDiff)
-    print(minMiTh)
-    edgeKeep <- vector(mode = "integer", length = length(tfLinks[,1]))
-    edgeRemove <- vector(mode = "integer", length = length(tfLinks[,1]))
-    for(i in seq_along(tfLinks[,1])){
-        srcGene <- tfLinks[i,1]
-        tgtGene <- tfLinks[i,2]
-        allTgts <- tfLinks[which(tfLinks[,1] == srcGene),2]
-        for(j in seq_along(allTgts)){
-            threeGenes <- c(srcGene, tgtGene, allTgts[j])
-            if(length(unique(threeGenes)) == 3){
-                thirdGenes <- union(tfLinks[which(tfLinks[,1] == allTgts[j]),2],
-                                    tfLinks[which(tfLinks[,2] == allTgts[j]),1])
-                if((srcGene %in% thirdGenes) & (tgtGene %in% thirdGenes)){
-                    tmp <- miMat[c(srcGene,tgtGene,allTgts[j]),c(srcGene, 
-                                                                 tgtGene,allTgts[j])]
-                    minValue <- which.min(c(tmp[2,1],tmp[3,1],tmp[3,2]))
-                    minMi <- min(c(tmp[2,1],tmp[3,1],tmp[3,2]))
-                    maxMi <- max(c(tmp[2,1],tmp[3,1],tmp[3,2]))
-                    edge <- list()
-                    edge[[1]] <- which((tfLinks[,1] == srcGene) & (tfLinks[,2] == tgtGene) |
-                                           (tfLinks[,2] == srcGene) & (tfLinks[,1] == tgtGene)
-                    )
-                    edge[[2]] <- which((tfLinks[,1] == srcGene) & 
-                                           (tfLinks[,2] == allTgts[j]) | 
-                                           (tfLinks[,2] == srcGene) & 
-                                           (tfLinks[,1] == allTgts[j]))
-                    edge[[3]] <- which((tfLinks[,1] == tgtGene) & 
-                                           (tfLinks[,2] == allTgts[j]) | 
-                                           (tfLinks[,2] == tgtGene) & 
-                                           (tfLinks[,1] == allTgts[j]))
-                    
-                    #   edgeKeep[edge[1]] <- edgeKeep[edge[1]] + 1
-                    #    edgeKeep[edge[2]] <- edgeKeep[edge[2]] + 1
-                    #    edgeKeep[edge[3]] <- edgeKeep[edge[3]] + 1
-                    
-                    #   edgeKeep[edge[minValue]] <- edgeKeep[edge[minValue]] - 1
-                    #   edgeRemove[edge[minValue]] <- edgeRemove[edge[minValue]] - 1
-                    if((maxMi - minMi) > miDiff){
-                        if(minMi < minMiTh){
-                            edgeRemove[edge[[minValue]]] <- -1
-                        }
-                    }
-                }
+  print(miDiff)
+  print(minMiTh)
+  edgeKeep <- vector(mode = "integer", length = length(tfLinks[,1]))
+  edgeRemove <- vector(mode = "integer", length = length(tfLinks[,1]))
+  for(i in seq_along(tfLinks[,1])){
+    srcGene <- tfLinks[i,1]
+    tgtGene <- tfLinks[i,2]
+    allTgts <- tfLinks[which(tfLinks[,1] == srcGene),2]
+    for(j in seq_along(allTgts)){
+      threeGenes <- c(srcGene, tgtGene, allTgts[j])
+      if(length(unique(threeGenes)) == 3){
+        thirdGenes <- union(tfLinks[which(tfLinks[,1] == allTgts[j]),2],
+                            tfLinks[which(tfLinks[,2] == allTgts[j]),1])
+        if((srcGene %in% thirdGenes) & (tgtGene %in% thirdGenes)){
+          tmp <- miMat[c(srcGene,tgtGene,allTgts[j]),c(srcGene, 
+                                                       tgtGene,allTgts[j])]
+          minValue <- which.min(c(tmp[2,1],tmp[3,1],tmp[3,2]))
+          minMi <- min(c(tmp[2,1],tmp[3,1],tmp[3,2]))
+          maxMi <- max(c(tmp[2,1],tmp[3,1],tmp[3,2]))
+          edge <- list()
+          edge[[1]] <- which((tfLinks[,1] == srcGene) & (tfLinks[,2] == tgtGene) |
+                             (tfLinks[,2] == srcGene) & (tfLinks[,1] == tgtGene)
+                           )
+          edge[[2]] <- which((tfLinks[,1] == srcGene) & 
+                             (tfLinks[,2] == allTgts[j]) | 
+                             (tfLinks[,2] == srcGene) & 
+                             (tfLinks[,1] == allTgts[j]))
+          edge[[3]] <- which((tfLinks[,1] == tgtGene) & 
+                             (tfLinks[,2] == allTgts[j]) | 
+                             (tfLinks[,2] == tgtGene) & 
+                             (tfLinks[,1] == allTgts[j]))
+
+       #   edgeKeep[edge[1]] <- edgeKeep[edge[1]] + 1
+      #    edgeKeep[edge[2]] <- edgeKeep[edge[2]] + 1
+      #    edgeKeep[edge[3]] <- edgeKeep[edge[3]] + 1
+          
+       #   edgeKeep[edge[minValue]] <- edgeKeep[edge[minValue]] - 1
+       #   edgeRemove[edge[minValue]] <- edgeRemove[edge[minValue]] - 1
+          if((maxMi - minMi) > miDiff){
+            if(minMi < minMiTh){
+          edgeRemove[edge[[minValue]]] <- -1
             }
+          }
         }
+      }
     }
-    
-    tfLinks <- tfLinks[-(which(edgeRemove < 0)),]
-    return(tfLinks)
+  }
+
+  tfLinks <- tfLinks[-(which(edgeRemove < 0)),]
+  return(tfLinks)
 }
 
 getAdjacencyMat <- function(tfLinks = tfLinks){
-    networkGenes <-  unique(c(tfLinks[,1],tfLinks[,2]))
-    nGenes <- length(networkGenes)
-    adjMat <- data.frame(matrix(data = 0,nrow = nGenes, ncol = nGenes))
-    rownames(adjMat) <- networkGenes
-    colnames(adjMat) <- as.character(networkGenes)
-    for(i in 1:dim(tfLinks)[1]){
-        adjMat[tfLinks[i,2], tfLinks[i,1]] <- tfLinks[i,3]
-    }
-    return(adjMat)
+  networkGenes <-  unique(c(tfLinks[,1],tfLinks[,2]))
+  nGenes <- length(networkGenes)
+  adjMat <- data.frame(matrix(data = 0,nrow = nGenes, ncol = nGenes))
+  rownames(adjMat) <- networkGenes
+  colnames(adjMat) <- as.character(networkGenes)
+  for(i in 1:dim(tfLinks)[1]){
+    adjMat[tfLinks[i,2], tfLinks[i,1]] <- tfLinks[i,3]
+  }
+  return(adjMat)
 }

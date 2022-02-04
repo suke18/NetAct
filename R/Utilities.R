@@ -3,13 +3,13 @@
 ####################################################
 
 #1. Activities Calculation
-cal_activity = function (gs_remain, tmp_data, tmp_sign, ind, with_weight, DE_weights, tf_exprs) {
+cal_activity = function (gs_remain, tmp_data, tmp_sign, ind, with_weight, DE_weights, tf_exprs, useCorSign = useCorSign) {
     if(length(gs_remain) == 1) {
         tmp_activity = as.vector(scale(tmp_data[gs_remain,]))  # by default it's a matrix
-        tmp_sign = tmp_sign[gs_remain,]
+        tmp_sign = tmp_sign[gs_remain, ,drop = FALSE ]
     } else{
         tmp_rem_data = row_norm(tmp_data[gs_remain, ])
-        tmp_sign = tmp_sign[gs_remain,]
+        tmp_sign = tmp_sign[gs_remain, , drop = FALSE]
         if(with_weight) {
             tmp_weight = Hill(DE_weights[gs_remain, ], ind)
         } else {
@@ -20,15 +20,17 @@ cal_activity = function (gs_remain, tmp_data, tmp_sign, ind, with_weight, DE_wei
             return(sum(rlst)/sum(tmp_weight))})
         tmp_activity = as.numeric(tmp_activity)
     }
+  if(useCorSign){
     if (cor(tmp_activity, tf_exprs, method="spearman") < 0){
         tmp_activity = -tmp_activity
         tmp_sign = -tmp_sign
-        names(tmp_sign) = gs_remain
+      # dimnames(tmp_sign) = gs_remain
     }
+  }
     else{
         tmp_activity = tmp_activity
         tmp_sign = tmp_sign
-        names(tmp_sign) = gs_remain
+      # dimnames(tmp_sign) = gs_remain
     }
     return(list(activity = tmp_activity, sign = tmp_sign))
 }
@@ -189,7 +191,7 @@ Combine_heatmap2 = function(new_activity, eset){
 }
 
 plot_network = function(tf_links){
-    library(igraph)
+    require(igraph)
     tf_nodes = unique(c(as.character(tf_links$from),
                         as.character(tf_links$to)))
     tf_graph = graph_from_data_frame(d=tf_links, vertices=tf_nodes, directed=T)
@@ -215,4 +217,55 @@ toCPM = function(ctMat){
     cts = sweep(ctMat, 2, L, FUN="/")
     mat = log10(as.matrix(cts)+1)
     return(mat)
+}
+
+plot_network_v = function(tf_links = tf_links){
+  require(visNetwork)
+  topology=data.frame(as.matrix(tf_links), stringsAsFactors = F)
+
+  node_list <- unique(c(topology[,1], topology[,2]))
+  nodes <- data.frame(id = node_list, label = node_list, font.size =30, value=c(rep(1,length(node_list))))
+  
+
+  #nodes <- data.frame(id = node_list, label = node_list, font.size =30,shape='circle',value=c(rep(1,length(node_list))))
+  edge_col <- data.frame(c(1,2),c("blue","darkred"))
+  colnames(edge_col) <- c("relation", "color")
+  arrow_type <- data.frame(c(1,2),c("arrow","circle"))
+  colnames(arrow_type) <- c("type", "color")
+  edges <- data.frame(from =c(topology[,1]), to = c(topology[,2])
+                      , arrows.to.type	=arrow_type$color[c(as.numeric(topology[,3]))]
+                      , width = 3
+                      , color = edge_col$color[c(as.numeric(topology[,3]))]
+  )
+  visNetwork(nodes, edges, height = "1000px", width = "100%") %>%
+    visEdges(arrows = "to") %>%
+    visOptions(manipulation = TRUE) %>%
+    visLayout(randomSeed = 123) %>%
+    visPhysics(solver = "forceAtlas2Based", stabilization = FALSE)
+#  file  <- paste("network_",file,".html",sep="")
+#  visSave(network, file = file, selfcontained = F)
+}
+
+filterDB <- function(GSDB,geneList,minSize = 5)
+{
+  nameTF <- names(GSDB)
+  nameTF <- nameTF[nameTF %in% geneList]
+  nTF <- length(nameTF)
+  nameTF <- names(DB)
+  j=1
+  for(i in 1:nTF){
+    if(nameTF[i] %in% geneList){
+      DB[[j]] <- DB[[j]][DB[[j]] %in% geneList]
+      if(length(DB[[j]]) > (minSize-1))
+        {
+      j=j+1
+      }
+      else{(DB[j] <- NULL)}
+    }
+    else{
+      DB[j] <- NULL
+      
+    }
+  }
+  return(DB)
 }
